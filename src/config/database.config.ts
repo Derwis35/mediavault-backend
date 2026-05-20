@@ -6,5 +6,5 @@ export default registerAs('database', () => ({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASS || 'postgres',
   database: process.env.DB_NAME || 'mediavault',
-  ssl: process.env.NODE_ENV === 'production'
+  ssl: process.env.DB_SSL === 'true'
 }));
