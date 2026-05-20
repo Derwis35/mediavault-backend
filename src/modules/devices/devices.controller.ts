@@ -103,4 +103,15 @@ export class DevicesController {
   setRegistered(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
     return this.devicesService.updateStatus(id, DeviceStatus.REGISTERED, user.userId);
   }
+
+  @Get(':id/live-status')
+  @Roles('admin', 'supervisor', 'operator', 'viewer')
+  async getLiveStatus(@Param('id', ParseUUIDPipe) id: string) {
+    const device = await this.devicesService.findOne(id);
+    return {
+      isLive: device.status === DeviceStatus.ACTIVE,
+      wowzaStreamName: device.wowzaStreamName,
+      lastSeen: device.lastSeen ?? null,
+    };
+  }
 }
