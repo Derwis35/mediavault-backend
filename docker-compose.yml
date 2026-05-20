@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mediavault-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mediavault
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mediavault-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: mediavault-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mediavault
+      DB_USER: postgres
+      DB_PASS: admin
+      DB_SSL: "false"
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      JWT_SECRET: cambia_esto_por_un_secreto_de_minimo_64_caracteres_aleatorios_aqui
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: cambia_esto_por_otro_secreto_diferente_de_minimo_64_caracteres_aqui
+      JWT_REFRESH_EXPIRES_IN: 8h
+
+      WOWZA_HOST: 3.144.202.226
+      WOWZA_PORT_API: 8087
+      WOWZA_PORT_STREAM: 1935
+      WOWZA_PORT_HLS: 8088
+      WOWZA_APP_NAME: SRVDEMO
+      WOWZA_API_USER: INNOVAR2026
+      WOWZA_API_PASSWORD: INNOVAR2026
+      WOWZA_STREAM_LOCK_KEY: INNOVAR2026
+      WOWZA_SECURE_TOKEN_SECRET: secreto_minimo_32_caracteres_para_tokens
+
+      ENCRYPTION_KEY: f259e986d767a2b9ee67b8e484404a8af89f174a6d73b650c7ea9647504442bd
+      STORAGE_PATH: /app/storage
+      FRONTEND_URL: http://localhost:5173
+    volumes:
+      - storage_data:/app/storage
+
+volumes:
+  postgres_data:
+  storage_data:
