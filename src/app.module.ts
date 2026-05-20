@@ -21,6 +21,7 @@ import { SecurityModule } from './modules/security/security.module';
 import { HealthModule } from './modules/health/health.module';
 import { WowzaServersModule } from './wowza-servers/wowza-servers.module';
 import { DevicesModule } from './modules/devices/devices.module';
+import { AlertsModule } from './modules/alerts/alerts.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -67,6 +68,7 @@ import { AuditService } from './modules/audit/audit.service';
     HealthModule,
     WowzaServersModule,
     DevicesModule,
+    AlertsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
