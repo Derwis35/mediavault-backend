@@ -1,22 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: mediavault-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: mediavault
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   redis:
     image: redis:7-alpine
     container_name: mediavault-redis
@@ -36,15 +18,14 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3000
 
-      DB_HOST: postgres
+      # Conecta al PostgreSQL del host (tu máquina local)
+      DB_HOST: host.docker.internal
       DB_PORT: 5432
       DB_NAME: mediavault
       DB_USER: postgres
@@ -76,5 +57,4 @@ services:
       - storage_data:/app/storage
 
 volumes:
-  postgres_data:
   storage_data:

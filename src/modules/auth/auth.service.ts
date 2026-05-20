@@ -41,16 +41,24 @@ export class AuthService {
 
   async login(dto: LoginDto, ip: string, userAgent: string) {
     const startTime = Date.now();
+    this.logger.log(`[LOGIN] Intento de login para: ${dto.email} desde IP: ${ip}`);
 
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
       relations: ['role'],
     });
 
+    if (!user) {
+      this.logger.warn(`[LOGIN] Usuario no encontrado: ${dto.email}`);
+    } else {
+      this.logger.log(`[LOGIN] Usuario encontrado: ${user.email} | activo: ${user.isActive} | rol: ${user.role?.name}`);
+    }
+
     // Always run bcrypt compare to prevent user-enumeration via timing
     const dummyHash = '$2b$12$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
     const passwordHash = user?.passwordHash ?? dummyHash;
     const isPasswordValid = await bcrypt.compare(dto.password, passwordHash);
+    this.logger.log(`[LOGIN] Verificación de password: ${isPasswordValid ? 'OK' : 'FALLÓ'}`);
 
     // Enforce minimum 200ms response time against timing attacks
     const elapsed = Date.now() - startTime;
@@ -59,10 +67,12 @@ export class AuthService {
     }
 
     if (!user || !isPasswordValid) {
+      this.logger.warn(`[LOGIN] Rechazado — usuario: ${!user ? 'no existe' : 'existe'} | password: ${isPasswordValid ? 'válida' : 'inválida'}`);
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
     if (!user.isActive) {
+      this.logger.warn(`[LOGIN] Rechazado — cuenta deshabilitada: ${user.email}`);
       throw new ForbiddenException('Cuenta deshabilitada');
     }
 
@@ -95,6 +105,7 @@ export class AuthService {
     await this.sessionRepository.save(session);
 
     await this.auditService.logAction('LOGIN', 'User', user.id, user.id, ip);
+    this.logger.log(`[LOGIN] Exitoso — usuario: ${user.email} | sessionId: ${sessionId}`);
 
     return {
       accessToken,
