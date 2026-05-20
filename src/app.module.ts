@@ -18,6 +18,7 @@ import { GatewayModule } from './modules/gateway/gateway.module';
 import { IngestionModule } from './modules/ingestion/ingestion.module';
 import { SecurityModule } from './modules/security/security.module';
 import { HealthModule } from './modules/health/health.module';
+import { WowzaServersModule } from './wowza-servers/wowza-servers.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -40,7 +41,10 @@ import { AuditService } from './modules/audit/audit.service';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         ssl: configService.get<boolean>('database.ssl'),
-        entities: [__dirname + '/modules/**/*.entity.{ts,js}'],
+        entities: [
+          __dirname + '/modules/**/*.entity.{ts,js}',
+          __dirname + '/wowza-servers/**/*.entity.{ts,js}',
+        ],
         migrations: [__dirname + '/database/migrations/*.{ts,js}'],
         synchronize: true,
         logging: false,
@@ -58,6 +62,7 @@ import { AuditService } from './modules/audit/audit.service';
     IngestionModule,
     SecurityModule,
     HealthModule,
+    WowzaServersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

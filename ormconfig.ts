@@ -23,7 +23,7 @@ export default new DataSource({
   password,
   database,
   ssl: process.env.NODE_ENV === 'production',
-  entities: ['src/modules/**/*.entity.ts'],
+  entities: ['src/modules/**/*.entity.ts', 'src/wowza-servers/**/*.entity.ts'],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,
   logging: false

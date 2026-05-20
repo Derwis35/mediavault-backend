@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { createTestApp, getAdminToken } from './setup/test-app';
 
 describe('Security E2E', () => {
@@ -31,7 +31,7 @@ describe('Security E2E', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('activeSessions');
-    expect(res.body).toHaveProperty('anomalyCount');
+    expect(res.body).toHaveProperty('anomalies');
   });
 
   it('GET /api/security/sessions → lista de sesiones activas', async () => {

@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { createTestApp, getAdminToken } from './setup/test-app';
 
 const SAMPLE_PNG_BASE64 =
@@ -33,9 +33,7 @@ describe('Evidences E2E', () => {
       .post('/api/evidences/snapshot')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        data: SAMPLE_PNG_BASE64,
-        mimeType: 'image/png',
-        filename: 'e2e-test.png',
+        imageBase64: SAMPLE_PNG_BASE64,
       });
 
     expect(res.status).toBe(201);
@@ -52,9 +50,9 @@ describe('Evidences E2E', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('items');
-    expect(res.body).toHaveProperty('total');
-    expect(Array.isArray(res.body.items)).toBe(true);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body).toHaveProperty('meta.total');
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 
   it('GET /api/evidences/:id/verify-integrity → isValid: true', async () => {
@@ -75,7 +73,7 @@ describe('Evidences E2E', () => {
       '/api/evidences/download/invalid-token-xyz',
     );
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
   });
 
   it('GET /api/evidences/:id/export → 200 ZIP con chain_of_custody', async () => {

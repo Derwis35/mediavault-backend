@@ -2,7 +2,9 @@ import { HttpService } from '@nestjs/axios';
 import { HttpException, ServiceUnavailableException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { of, throwError } from 'rxjs';
+import { WowzaServer } from '../../wowza-servers/entities/wowza-server.entity';
 import { RedisService } from '../redis/redis.service';
 import { WowzaSecureTokenService } from './wowza-secure-token.service';
 import { WowzaService } from './wowza.service';
@@ -44,6 +46,11 @@ const mockRedisService = {
   exists: jest.fn().mockResolvedValue(false),
 };
 
+// Repo mock: devuelve null → getActiveServer hace fallback a variables de entorno
+const mockWowzaServersRepo = {
+  findOne: jest.fn().mockResolvedValue(null),
+};
+
 describe('WowzaService', () => {
   let wowzaService: WowzaService;
 
@@ -54,6 +61,7 @@ describe('WowzaService', () => {
         { provide: HttpService, useValue: mockHttpService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: RedisService, useValue: mockRedisService },
+        { provide: getRepositoryToken(WowzaServer), useValue: mockWowzaServersRepo },
       ],
     }).compile();
 
@@ -62,6 +70,7 @@ describe('WowzaService', () => {
     mockRedisService.getOrSet.mockImplementation(
       async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn(),
     );
+    mockWowzaServersRepo.findOne.mockResolvedValue(null);
   });
 
   it('getApplications() should return the applications list', async () => {
@@ -97,8 +106,8 @@ describe('WowzaService', () => {
     expect(result.uptime).toBe(0);
   });
 
-  it('buildPlaybackUrls() should construct all five URLs with the correct host and ports', () => {
-    const urls = wowzaService.buildPlaybackUrls('live', 'testStream');
+  it('buildPlaybackUrls() should construct all five URLs with the correct host and ports', async () => {
+    const urls = await wowzaService.buildPlaybackUrls('live', 'testStream');
 
     expect(urls.hls).toBe('http://localhost:1935/live/testStream/playlist.m3u8');
     expect(urls.llHls).toBe('http://localhost:1935/live/testStream/playlist.m3u8?chunklist');
@@ -106,13 +115,39 @@ describe('WowzaService', () => {
     expect(urls.webrtc).toBe('https://localhost:8090/webrtc/live/testStream');
     expect(urls.rtmp).toBe('rtmp://localhost:1935/live/testStream');
   });
+
+  it('getActiveServer() should use DB server when repo returns a record', async () => {
+    const dbServer = {
+      id: 'db-server-uuid',
+      ip: '10.0.0.5',
+      portApi: 8087,
+      portStream: 1935,
+      portHls: 8088,
+      apiUser: 'wowza_user',
+      apiPassword: 'wowza_pass',
+      appName: 'live',
+      isDefault: true,
+      isActive: true,
+    };
+    mockWowzaServersRepo.findOne.mockResolvedValue(dbServer);
+
+    const apps = [{ id: '1', name: 'live', description: '', appType: 'Live', streamConfig: { storageDir: '', streamType: '' } }];
+    mockHttpService.get.mockReturnValue(of({ data: { applications: apps } }));
+
+    await wowzaService.getApplications();
+
+    expect(mockHttpService.get).toHaveBeenCalledWith(
+      expect.stringContaining('10.0.0.5:8087'),
+      expect.any(Object),
+    );
+  });
 });
 
 describe('WowzaSecureTokenService', () => {
   let secureTokenService: WowzaSecureTokenService;
 
   const mockWowzaService = {
-    buildPlaybackUrls: jest.fn().mockReturnValue({
+    buildPlaybackUrls: jest.fn().mockResolvedValue({
       hls: 'http://localhost:1935/live/testStream/playlist.m3u8',
       llHls: 'http://localhost:1935/live/testStream/playlist.m3u8?chunklist',
       dash: 'http://localhost:1935/live/testStream/manifest.mpd',
@@ -133,7 +168,7 @@ describe('WowzaSecureTokenService', () => {
 
     secureTokenService = module.get<WowzaSecureTokenService>(WowzaSecureTokenService);
     jest.clearAllMocks();
-    mockWowzaService.buildPlaybackUrls.mockReturnValue({
+    mockWowzaService.buildPlaybackUrls.mockResolvedValue({
       hls: 'http://localhost:1935/live/testStream/playlist.m3u8',
       llHls: 'http://localhost:1935/live/testStream/playlist.m3u8?chunklist',
       dash: 'http://localhost:1935/live/testStream/manifest.mpd',

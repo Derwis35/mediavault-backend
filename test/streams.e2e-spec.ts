@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { createTestApp, getAdminToken } from './setup/test-app';
 
 describe('Streams E2E', () => {
@@ -50,10 +50,10 @@ describe('Streams E2E', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('items');
-    expect(res.body).toHaveProperty('total');
-    expect(res.body).toHaveProperty('page');
-    expect(Array.isArray(res.body.items)).toBe(true);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body).toHaveProperty('meta.total');
+    expect(res.body).toHaveProperty('meta.page');
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 
   it('GET /api/streams/:id → stream completo', async () => {
@@ -85,7 +85,7 @@ describe('Streams E2E', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('hls');
+    expect(res.body).toHaveProperty('playbackUrls.hls');
   });
 
   it('POST /api/streams/:id/start-ingestion con stream RTMP → 400 (no RTSP)', async () => {

@@ -30,7 +30,7 @@ export class WowzaSecureTokenService {
     const hashString = `${params.streamName}-${startTime}-${endTime}-${clientIp}-${secret}`;
     const tokenHash = createHash('sha256').update(hashString).digest('hex');
 
-    const baseUrls = this.wowzaService.buildPlaybackUrls(params.appName, params.streamName);
+    const baseUrls = await this.wowzaService.buildPlaybackUrls(params.appName, params.streamName);
     const tokenQs = `wowzaTokenStartTime=${startTime}&wowzaTokenEndTime=${endTime}&wowzaTokenHash=${tokenHash}`;
 
     const appendQs = (url: string): string =>

@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { createTestApp } from './setup/test-app';
 
 describe('Auth E2E', () => {
@@ -73,7 +73,7 @@ describe('Auth E2E', () => {
       .post('/api/auth/login')
       .send({ email: 'e2e-admin@test.com', password: 'Admin123!' });
 
-    const cookies = loginRes.headers['set-cookie'] as string[];
+    const cookies = loginRes.headers['set-cookie'] as unknown as string[];
 
     const res = await request(app.getHttpServer())
       .post('/api/auth/refresh')
@@ -90,7 +90,7 @@ describe('Auth E2E', () => {
       .send({ email: 'e2e-admin@test.com', password: 'Admin123!' });
 
     const token = loginRes.body.accessToken as string;
-    const cookies = loginRes.headers['set-cookie'] as string[];
+    const cookies = loginRes.headers['set-cookie'] as unknown as string[];
 
     const logoutRes = await request(app.getHttpServer())
       .post('/api/auth/logout')

@@ -61,6 +61,7 @@ export class AuthController {
   @Post('refresh')
   @Public()
   @UseGuards(JwtRefreshGuard)
+  @HttpCode(HttpStatus.OK)
   async refresh(@CurrentUser() user: Pick<AuthUser, 'userId' | 'sessionId'>) {
     return this.authService.refresh(user.userId, user.sessionId);
   }

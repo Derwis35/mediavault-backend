@@ -73,7 +73,7 @@ export class StreamsService {
     await this.auditService.logAction('STREAM_CREATED', 'Stream', saved.id, userId);
 
     const response = this.toResponseDto(saved);
-    response.playbackUrls = this.wowzaService.buildPlaybackUrls(
+    response.playbackUrls = await this.wowzaService.buildPlaybackUrls(
       saved.wowzaAppName,
       saved.wowzaStreamName,
     );
@@ -143,7 +143,7 @@ export class StreamsService {
     }
 
     const dto = this.toResponseDto(stream);
-    dto.playbackUrls = this.wowzaService.buildPlaybackUrls(
+    dto.playbackUrls = await this.wowzaService.buildPlaybackUrls(
       stream.wowzaAppName,
       stream.wowzaStreamName,
     );
@@ -195,7 +195,7 @@ export class StreamsService {
     await this.auditService.logAction('STREAM_UPDATED', 'Stream', id, userId);
 
     const response = this.toResponseDto(saved);
-    response.playbackUrls = this.wowzaService.buildPlaybackUrls(
+    response.playbackUrls = await this.wowzaService.buildPlaybackUrls(
       saved.wowzaAppName,
       saved.wowzaStreamName,
     );
@@ -348,7 +348,7 @@ export class StreamsService {
 
   private async enrichStreamForList(stream: Stream): Promise<StreamResponseDto> {
     const dto = this.toResponseDto(stream);
-    dto.playbackUrls = this.wowzaService.buildPlaybackUrls(
+    dto.playbackUrls = await this.wowzaService.buildPlaybackUrls(
       stream.wowzaAppName,
       stream.wowzaStreamName,
     );

@@ -1,7 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as cookieParser from 'cookie-parser';
-import * as request from 'supertest';
+import cookieParser from 'cookie-parser';
+import request from 'supertest';
 import * as bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import { getDataSourceToken } from '@nestjs/typeorm';
@@ -20,11 +20,14 @@ process.env.JWT_REFRESH_EXPIRES_IN = '8h';
 const wowzaMock = {
   getServerStatus: jest.fn().mockResolvedValue({ isOnline: false, version: 'mock', uptime: 0 }),
   getIncomingStream: jest.fn().mockResolvedValue(null),
-  buildPlaybackUrls: jest.fn().mockReturnValue({
+  buildPlaybackUrls: jest.fn().mockResolvedValue({
     hls: 'http://localhost:1935/live/test/playlist.m3u8',
+    llHls: 'http://localhost:1935/live/test/playlist.m3u8?chunklist',
+    dash: 'http://localhost:1935/live/test/manifest.mpd',
     rtmp: 'rtmp://localhost:1935/live/test',
     webrtc: 'wss://localhost:1935/live/test/webrtc',
   }),
+  getConnections: jest.fn().mockResolvedValue({ total: 0, byApplication: {}, byProtocol: {}, connections: [] }),
   generateSecureToken: jest.fn().mockReturnValue('mock-secure-token'),
   getApplications: jest.fn().mockResolvedValue([]),
   createApplication: jest.fn().mockResolvedValue({ name: 'live' }),
@@ -35,6 +38,7 @@ const ingestionMock = {
   startIngestion: jest.fn().mockResolvedValue({ status: 'running', pid: 12345 }),
   stopIngestion: jest.fn().mockResolvedValue(undefined),
   isRunning: jest.fn().mockReturnValue(false),
+  getStatus: jest.fn().mockReturnValue({ status: 'idle', pid: null, reconnectAttempts: 0 }),
   restartIngestion: jest.fn().mockResolvedValue({ status: 'running', pid: 12346 }),
   getRunningStreams: jest.fn().mockReturnValue([]),
   onModuleInit: jest.fn().mockResolvedValue(undefined),
