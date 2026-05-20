@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
+import { RolesService } from './roles.service';
+import { RolesController } from './roles.controller';
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { Session } from '../auth/entities/session.entity';
@@ -16,8 +18,8 @@ import { GatewayModule } from '../gateway/gateway.module';
     AuditModule,
     GatewayModule,
   ],
-  controllers: [UsersController],
-  providers: [UsersService],
-  exports: [UsersService],
+  controllers: [UsersController, RolesController],
+  providers: [UsersService, RolesService],
+  exports: [UsersService, RolesService],
 })
 export class UsersModule {}
