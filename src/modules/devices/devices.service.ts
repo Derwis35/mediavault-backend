@@ -50,6 +50,8 @@ export class DevicesService {
       wowzaStreamName: dto.wowzaStreamName,
       assignedUser,
       status: dto.status ?? DeviceStatus.REGISTERED,
+      latitude: dto.latitude ?? null,
+      longitude: dto.longitude ?? null,
     });
 
     const saved = await this.deviceRepository.save(device);
@@ -137,6 +139,8 @@ export class DevicesService {
     if (dto.wowzaStreamName !== undefined) device.wowzaStreamName = dto.wowzaStreamName;
     if (dto.status !== undefined) device.status = dto.status;
     if (dto.isActive !== undefined) device.isActive = dto.isActive;
+    if (dto.latitude !== undefined) device.latitude = dto.latitude;
+    if (dto.longitude !== undefined) device.longitude = dto.longitude;
 
     const saved = await this.deviceRepository.save(device);
 
