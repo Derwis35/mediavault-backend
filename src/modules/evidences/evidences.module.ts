@@ -11,12 +11,14 @@ import { Event } from '../events/entities/event.entity';
 import { User } from '../users/entities/user.entity';
 import { AuditModule } from '../audit/audit.module';
 import { GatewayModule } from '../gateway/gateway.module';
+import { WowzaModule } from '../wowza/wowza.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Evidence, Stream, Event, User]),
     AuditModule,
     GatewayModule,
+    WowzaModule,
   ],
   controllers: [EvidencesController],
   providers: [

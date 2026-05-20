@@ -253,6 +253,31 @@ export class WowzaService {
     });
   }
 
+  async checkDvrAvailable(appName: string, serverId?: string): Promise<boolean> {
+    const server = await this.getActiveServer(serverId);
+    try {
+      const data = await this.wowzaGet<{ dvrStores?: unknown[] }>(
+        `/servers/_defaultServer_/vhosts/_defaultVHost_/applications/${appName}/dvrstores`,
+        server,
+      );
+      return Array.isArray(data.dvrStores) && data.dvrStores.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  async buildDvrClipUrl(
+    appName: string,
+    streamName: string,
+    startTimeMs: number,
+    durationMs: number,
+    serverId?: string,
+  ): Promise<string> {
+    const server = await this.getActiveServer(serverId);
+    const base = `http://${server.ip}:${server.portHls}/${appName}/${streamName}/playlist.m3u8`;
+    return `${base}?DVR&wowzadvrplayliststart=${startTimeMs}&wowzadvrplaylistduration=${durationMs}`;
+  }
+
   async buildPlaybackUrls(appName: string, streamName: string, serverId?: string): Promise<WowzaPlaybackUrls> {
     const server = await this.getActiveServer(serverId);
     const base = `http://${server.ip}:${server.portStream}/${appName}/${streamName}`;

@@ -25,6 +25,8 @@ import { EvidencesIntegrityService } from './evidences-integrity.service';
 import { EvidencesExportService } from './evidences-export.service';
 import { AuditService } from '../audit/audit.service';
 import { StreamingGateway } from '../gateway/streaming.gateway';
+import { WowzaService } from '../wowza/wowza.service';
+import { CreateDvrClipDto } from './dto/create-dvr-clip.dto';
 
 const MAX_SNAPSHOT_BYTES = 10 * 1024 * 1024;
 
@@ -55,6 +57,7 @@ export class EvidencesService {
     private readonly exportService: EvidencesExportService,
     private readonly auditService: AuditService,
     private readonly gateway: StreamingGateway,
+    private readonly wowzaService: WowzaService,
   ) {}
 
   async create(
@@ -153,6 +156,81 @@ export class EvidencesService {
     };
 
     return this.create(fakeFile, createDto, userId, '');
+  }
+
+  async createDvrClip(dto: CreateDvrClipDto, userId: string): Promise<EvidenceResponseDto> {
+    const stream = await this.streamRepository.findOne({ where: { id: dto.streamId } });
+    if (!stream) throw new NotFoundException(`Stream ${dto.streamId} no encontrado`);
+
+    const dvrAvailable = await this.wowzaService.checkDvrAvailable(stream.wowzaAppName);
+    if (!dvrAvailable) {
+      throw new BadRequestException('DVR no disponible para este stream');
+    }
+
+    const startMs = new Date(dto.startTime).getTime();
+    const endMs = new Date(dto.endTime).getTime();
+
+    if (endMs <= startMs) {
+      throw new BadRequestException('endTime debe ser posterior a startTime');
+    }
+
+    const durationMs = endMs - startMs;
+    const durationSeconds = Math.round(durationMs / 1000);
+
+    const dvrClipUrl = await this.wowzaService.buildDvrClipUrl(
+      stream.wowzaAppName,
+      stream.wowzaStreamName,
+      startMs,
+      durationMs,
+    );
+
+    const evidenceId = crypto.randomUUID();
+    const storagePath = `dvr/${stream.wowzaAppName}/${stream.wowzaStreamName}/${evidenceId}.m3u8`;
+    const hashSha256 = crypto.createHash('sha256').update(dvrClipUrl).digest('hex');
+
+    const metadata: Record<string, unknown> = {
+      dvrClipUrl,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
+      appName: stream.wowzaAppName,
+      streamName: stream.wowzaStreamName,
+    };
+    if (dto.description) metadata['description'] = dto.description;
+
+    const evidence = this.evidenceRepository.create({
+      id: evidenceId,
+      type: EvidenceType.DVR_CLIP,
+      storagePath,
+      hashSha256,
+      fileSizeBytes: '0',
+      durationSeconds,
+      metadata,
+      recordedAt: new Date(dto.startTime),
+      stream: { id: stream.id } as Stream,
+      uploadedBy: { id: userId } as User,
+    });
+
+    const saved = await this.evidenceRepository.save(evidence);
+
+    await this.auditService.logAction(
+      'DVR_CLIP_CREATED',
+      'Evidence',
+      saved.id,
+      userId,
+      undefined,
+      {
+        streamId: dto.streamId,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        durationSeconds,
+        dvrClipUrl,
+      },
+    );
+
+    this.gateway.emitEvidenceCreated(saved as unknown as Record<string, unknown>);
+
+    const downloadUrl = await this.storageService.generateDownloadToken(saved.id, userId);
+    return this.toResponseDto(saved, stream, downloadUrl);
   }
 
   async findAll(

@@ -22,6 +22,7 @@ import { memoryStorage } from 'multer';
 import { Request, Response } from 'express';
 import { EvidencesService } from './evidences.service';
 import { CreateEvidenceDto } from './dto/create-evidence.dto';
+import { CreateDvrClipDto } from './dto/create-dvr-clip.dto';
 import { EvidenceFiltersDto } from './dto/evidence-filters.dto';
 import { SnapshotCreateDto } from './dto/evidence-response.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -111,6 +112,13 @@ export class EvidencesController {
   @HttpCode(HttpStatus.CREATED)
   createSnapshot(@Body() dto: SnapshotCreateDto, @CurrentUser() user: AuthUser) {
     return this.evidencesService.createSnapshot(dto, user.userId);
+  }
+
+  @Post('dvr-clip')
+  @Roles('admin', 'supervisor', 'operator')
+  @HttpCode(HttpStatus.CREATED)
+  createDvrClip(@Body() dto: CreateDvrClipDto, @CurrentUser() user: AuthUser) {
+    return this.evidencesService.createDvrClip(dto, user.userId);
   }
 
   @Get()
