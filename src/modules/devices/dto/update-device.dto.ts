@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { DeviceStatus } from '../entities/device.entity';
 
 export class UpdateDeviceDto {
@@ -29,6 +29,10 @@ export class UpdateDeviceDto {
   @IsOptional()
   status?: DeviceStatus;
 
+  @IsUUID()
+  @IsOptional()
+  assignedUserId?: string;
+
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
@@ -44,4 +48,12 @@ export class UpdateDeviceDto {
   @Min(-180)
   @Max(180)
   longitude?: number;
+
+  @IsUUID()
+  @IsOptional()
+  quadrantId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  zoneId?: string;
 }

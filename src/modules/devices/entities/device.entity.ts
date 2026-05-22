@@ -49,8 +49,17 @@ export class Device {
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
   longitude?: number | null;
 
+  @Column({ name: 'assigned_at', type: 'timestamptz', nullable: true })
+  assignedAt?: Date | null;
+
   @Column({ name: 'last_seen', type: 'timestamptz', nullable: true })
   lastSeen?: Date | null;
+
+  @Column({ name: 'quadrant_id', type: 'uuid', nullable: true })
+  quadrantId?: string | null;
+
+  @Column({ name: 'zone_id', type: 'uuid', nullable: true })
+  zoneId?: string | null;
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;

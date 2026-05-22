@@ -20,7 +20,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ unique: true })
+  @Column()
   email!: string;
 
   @Column({ name: 'password_hash' })
@@ -31,6 +31,21 @@ export class User {
 
   @Column({ name: 'last_name' })
   lastName!: string;
+
+  @Column({ name: 'id_type', type: 'varchar', length: 20, nullable: true })
+  idType?: 'cedula' | 'placa' | 'codigo_unico' | null;
+
+  @Column({ name: 'id_number', type: 'varchar', length: 20, nullable: true, unique: true })
+  idNumber?: string | null;
+
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  cargo?: string | null;
+
+  @Column({ name: 'zone_id', type: 'uuid', nullable: true })
+  zoneId?: string | null;
+
+  @Column({ name: 'quadrant_id', type: 'uuid', nullable: true })
+  quadrantId?: string | null;
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;

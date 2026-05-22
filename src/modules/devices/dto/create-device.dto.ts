@@ -41,4 +41,12 @@ export class CreateDeviceDto {
   @Min(-180)
   @Max(180)
   longitude?: number;
+
+  @IsUUID()
+  @IsOptional()
+  quadrantId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  zoneId?: string;
 }

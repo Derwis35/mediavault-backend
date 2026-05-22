@@ -41,15 +41,27 @@ export class AuthService {
 
   async login(dto: LoginDto, ip: string, userAgent: string) {
     const startTime = Date.now();
-    this.logger.log(`[LOGIN] Intento de login para: ${dto.email} desde IP: ${ip}`);
+    const identifier = dto.username;
+    this.logger.log(`[LOGIN] Intento de login para: ${identifier} desde IP: ${ip}`);
 
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email },
-      relations: ['role'],
-    });
+    const isEmail = identifier.includes('@');
+    const isNumeric = /^\d+$/.test(identifier);
+
+    let user: User | null = null;
+    if (isEmail) {
+      user = await this.userRepository.findOne({
+        where: { email: identifier.toLowerCase() },
+        relations: ['role'],
+      });
+    } else if (isNumeric) {
+      user = await this.userRepository.findOne({
+        where: { idNumber: identifier },
+        relations: ['role'],
+      });
+    }
 
     if (!user) {
-      this.logger.warn(`[LOGIN] Usuario no encontrado: ${dto.email}`);
+      this.logger.warn(`[LOGIN] Usuario no encontrado: ${identifier}`);
     } else {
       this.logger.log(`[LOGIN] Usuario encontrado: ${user.email} | activo: ${user.isActive} | rol: ${user.role?.name}`);
     }
@@ -72,7 +84,7 @@ export class AuthService {
     }
 
     if (!user.isActive) {
-      this.logger.warn(`[LOGIN] Rechazado — cuenta deshabilitada: ${user.email}`);
+      this.logger.warn(`[LOGIN] Rechazado — cuenta deshabilitada: ${identifier}`);
       throw new ForbiddenException('Cuenta deshabilitada');
     }
 
@@ -105,7 +117,7 @@ export class AuthService {
     await this.sessionRepository.save(session);
 
     await this.auditService.logAction('LOGIN', 'User', user.id, user.id, ip);
-    this.logger.log(`[LOGIN] Exitoso — usuario: ${user.email} | sessionId: ${sessionId}`);
+    this.logger.log(`[LOGIN] Exitoso — usuario: ${user.email} (${identifier}) | sessionId: ${sessionId}`);
 
     return {
       accessToken,

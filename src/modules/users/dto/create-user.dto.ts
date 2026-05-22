@@ -2,9 +2,10 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  IsIn,
   IsOptional,
   IsString,
-  Matches,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -12,17 +13,15 @@ import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
   @IsEmail()
+  @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.toLowerCase() : value,
   )
-  email!: string;
+  email?: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(4, { message: 'La contraseña debe tener al menos 4 caracteres' })
   @MaxLength(128)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: 'Debe contener minúscula, mayúscula y número',
-  })
   password!: string;
 
   @IsString()
@@ -41,4 +40,25 @@ export class CreateUserDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsIn(['cedula', 'placa', 'codigo_unico'])
+  idType!: string;
+
+  @IsString()
+  @MinLength(4, { message: 'El número de identificación debe tener al menos 4 caracteres' })
+  @MaxLength(20)
+  idNumber!: string;
+
+  @IsString()
+  @MaxLength(150)
+  @IsOptional()
+  cargo?: string;
+
+  @IsUUID()
+  @IsOptional()
+  zoneId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  quadrantId?: string;
 }

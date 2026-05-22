@@ -88,7 +88,7 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         isActive: true,
-        role: { id: 'role-uuid', name: RoleName.OPERATOR },
+        role: { id: 'role-uuid', name: RoleName.OPERATOR, isSystem: true },
       };
     });
 
@@ -99,7 +99,7 @@ describe('AuthService', () => {
       mockSessionRepository.save.mockResolvedValue(sessionMock);
 
       const result = await authService.login(
-        { email: 'test@example.com', password: 'Test1234!' },
+        { username: 'test@example.com', password: 'Test1234!' },
         '127.0.0.1',
         'jest-agent',
       );
@@ -116,7 +116,7 @@ describe('AuthService', () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        authService.login({ email: 'noexiste@example.com', password: 'Test1234!' }, '', ''),
+        authService.login({ username: 'noexiste@example.com', password: 'Test1234!' }, '', ''),
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -124,7 +124,7 @@ describe('AuthService', () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
 
       await expect(
-        authService.login({ email: 'test@example.com', password: 'WrongPassword!' }, '', ''),
+        authService.login({ username: 'test@example.com', password: 'WrongPassword!' }, '', ''),
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -132,7 +132,7 @@ describe('AuthService', () => {
       mockUserRepository.findOne.mockResolvedValue({ ...mockUser, isActive: false });
 
       await expect(
-        authService.login({ email: 'test@example.com', password: 'Test1234!' }, '', ''),
+        authService.login({ username: 'test@example.com', password: 'Test1234!' }, '', ''),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -140,7 +140,7 @@ describe('AuthService', () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
       try {
-        await authService.login({ email: 'ghost@example.com', password: 'Test1234!' }, '', '');
+        await authService.login({ username: 'ghost@example.com', password: 'Test1234!' }, '', '');
       } catch (err) {
         expect((err as Error).message).toBe('Credenciales inválidas');
       }

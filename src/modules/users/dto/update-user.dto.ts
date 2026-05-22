@@ -1,8 +1,10 @@
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -27,4 +29,26 @@ export class UpdateUserDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsIn(['cedula', 'placa', 'codigo_unico'])
+  @IsOptional()
+  idType?: string;
+
+  @IsString()
+  @MaxLength(20)
+  @IsOptional()
+  idNumber?: string;
+
+  @IsString()
+  @MaxLength(150)
+  @IsOptional()
+  cargo?: string;
+
+  @IsUUID()
+  @IsOptional()
+  zoneId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  quadrantId?: string;
 }

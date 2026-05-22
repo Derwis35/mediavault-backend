@@ -19,4 +19,10 @@ export class UpdatePermissionsDto implements RolePermissions {
 
   @IsBoolean()
   canViewAuditLog!: boolean;
+
+  @IsBoolean()
+  canDownloadReports!: boolean;
+
+  @IsBoolean()
+  canManagePermissions!: boolean;
 }

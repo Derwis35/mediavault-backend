@@ -4,7 +4,7 @@ export enum RoleName {
   ADMIN = 'admin',
   SUPERVISOR = 'supervisor',
   OPERATOR = 'operator',
-  VIEWER = 'viewer'
+  VIEWER = 'viewer',
 }
 
 @Entity('roles')
@@ -12,12 +12,15 @@ export class Role {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'enum', enum: RoleName, unique: true })
-  name!: RoleName;
+  @Column({ type: 'varchar', length: 50, unique: true })
+  name!: string;
 
   @Column({ nullable: true })
   description?: string;
 
   @Column({ type: 'jsonb', nullable: true })
   permissions?: Record<string, unknown>;
+
+  @Column({ name: 'is_system', default: false })
+  isSystem!: boolean;
 }

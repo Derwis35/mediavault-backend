@@ -1,13 +1,12 @@
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class LoginDto {
-  @IsEmail()
-  @Transform(({ value }: { value: string }) => value.toLowerCase())
-  email!: string;
+  @IsString()
+  @IsNotEmpty()
+  username!: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(4, { message: 'La contraseña debe tener al menos 4 caracteres' })
   @MaxLength(128)
   password!: string;
 }

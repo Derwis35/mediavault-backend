@@ -52,6 +52,8 @@ export class DevicesService {
       status: dto.status ?? DeviceStatus.REGISTERED,
       latitude: dto.latitude ?? null,
       longitude: dto.longitude ?? null,
+      quadrantId: dto.quadrantId ?? null,
+      zoneId: dto.zoneId ?? null,
     });
 
     const saved = await this.deviceRepository.save(device);
@@ -141,6 +143,35 @@ export class DevicesService {
     if (dto.isActive !== undefined) device.isActive = dto.isActive;
     if (dto.latitude !== undefined) device.latitude = dto.latitude;
     if (dto.longitude !== undefined) device.longitude = dto.longitude;
+    if (dto.quadrantId !== undefined) device.quadrantId = dto.quadrantId ?? null;
+    if (dto.zoneId !== undefined) device.zoneId = dto.zoneId ?? null;
+
+    if (dto.assignedUserId !== undefined) {
+      const previousUserId = device.assignedUser?.id ?? null;
+      if (dto.assignedUserId) {
+        const user = await this.userRepository.findOne({ where: { id: dto.assignedUserId } });
+        if (!user) throw new NotFoundException(`Usuario '${dto.assignedUserId}' no encontrado`);
+        device.assignedUser = user;
+        device.assignedAt = new Date();
+        await this.auditService.log({
+          action: 'DEVICE_ASSIGNED',
+          entityType: 'Device',
+          entityId: id,
+          userId: actorId,
+          metadata: { assignedTo: dto.assignedUserId, previousUser: previousUserId, assignedAt: device.assignedAt.toISOString() },
+        });
+      } else {
+        device.assignedUser = null;
+        device.assignedAt = null;
+        await this.auditService.log({
+          action: 'DEVICE_UNASSIGNED',
+          entityType: 'Device',
+          entityId: id,
+          userId: actorId,
+          metadata: { previousUser: previousUserId, unassignedAt: new Date().toISOString() },
+        });
+      }
+    }
 
     const saved = await this.deviceRepository.save(device);
 
@@ -174,7 +205,7 @@ export class DevicesService {
   async assignToUser(deviceId: string, userId: string, actorId: string): Promise<Device> {
     const [device, user] = await Promise.all([
       this.deviceRepository.findOne({ where: { id: deviceId }, relations: ['assignedUser'] }),
-      this.userRepository.findOne({ where: { id: userId } }),
+      this.userRepository.findOne({ where: { id: userId }, select: ['id', 'quadrantId'] }),
     ]);
 
     if (!device) throw new NotFoundException('Dispositivo no encontrado');
@@ -182,6 +213,8 @@ export class DevicesService {
 
     const previousUserId = device.assignedUser?.id ?? null;
     device.assignedUser = user;
+    device.assignedAt = new Date();
+    device.quadrantId = user.quadrantId ?? null;
     const saved = await this.deviceRepository.save(device);
 
     await this.auditService.log({
@@ -189,7 +222,7 @@ export class DevicesService {
       entityType: 'Device',
       entityId: deviceId,
       userId: actorId,
-      metadata: { assignedTo: userId, previousUser: previousUserId },
+      metadata: { assignedTo: userId, previousUser: previousUserId, assignedAt: device.assignedAt.toISOString() },
     });
 
     return saved;
@@ -204,6 +237,8 @@ export class DevicesService {
 
     const previousUserId = device.assignedUser?.id ?? null;
     device.assignedUser = null;
+    device.assignedAt = null;
+    device.quadrantId = null;
     const saved = await this.deviceRepository.save(device);
 
     await this.auditService.log({
@@ -211,7 +246,7 @@ export class DevicesService {
       entityType: 'Device',
       entityId: deviceId,
       userId: actorId,
-      metadata: { previousUser: previousUserId },
+      metadata: { previousUser: previousUserId, unassignedAt: new Date().toISOString() },
     });
 
     return saved;

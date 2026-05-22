@@ -11,6 +11,7 @@ import { EvidencesIntegrityService } from './evidences-integrity.service';
 import { EvidencesExportService } from './evidences-export.service';
 import { AuditService } from '../audit/audit.service';
 import { StreamingGateway } from '../gateway/streaming.gateway';
+import { WowzaService } from '../wowza/wowza.service';
 
 const MOCK_EVIDENCE_ID = 'evi-001';
 const MOCK_USER_ID = 'user-001';
@@ -85,6 +86,11 @@ describe('EvidencesService', () => {
     emitAlert: jest.fn(),
   };
 
+  const mockWowzaService = {
+    checkDvrAvailable: jest.fn().mockResolvedValue(true),
+    buildDvrClipUrl: jest.fn().mockReturnValue('http://wowza/dvr-clip.m3u8'),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -109,6 +115,7 @@ describe('EvidencesService', () => {
         { provide: EvidencesExportService, useValue: mockExportService },
         { provide: AuditService, useValue: mockAuditService },
         { provide: StreamingGateway, useValue: mockGateway },
+        { provide: WowzaService, useValue: mockWowzaService },
       ],
     }).compile();
 

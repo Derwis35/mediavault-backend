@@ -9,6 +9,11 @@ export interface UserResponseDto {
   email: string;
   firstName: string;
   lastName: string;
+  idType?: string | null;
+  idNumber?: string | null;
+  cargo?: string | null;
+  zoneId?: string | null;
+  quadrantId?: string | null;
   role?: RoleDto;
   isActive: boolean;
   createdAt: string;

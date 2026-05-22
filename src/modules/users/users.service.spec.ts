@@ -121,7 +121,8 @@ describe('UsersService', () => {
   // ─── create() ─────────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    it('throws ConflictException if email already exists', async () => {
+    it('throws ConflictException if idNumber already exists', async () => {
+      roleRepository.findOne.mockResolvedValueOnce(mockRole as Role);
       userRepository.findOne.mockResolvedValueOnce(mockUser as User);
 
       await expect(
@@ -132,6 +133,8 @@ describe('UsersService', () => {
             firstName: 'Test',
             lastName: 'User',
             role: 'operator',
+            idType: 'cedula',
+            idNumber: '12345678',
           },
           'admin-id',
         ),
@@ -139,8 +142,8 @@ describe('UsersService', () => {
     });
 
     it('hashes the password before saving', async () => {
-      userRepository.findOne.mockResolvedValueOnce(null);
       roleRepository.findOne.mockResolvedValueOnce(mockRole as Role);
+      userRepository.findOne.mockResolvedValueOnce(null);
       userRepository.create.mockReturnValueOnce(mockUser as User);
       userRepository.save.mockResolvedValueOnce(mockUser as User);
 
@@ -153,6 +156,8 @@ describe('UsersService', () => {
           firstName: 'Test',
           lastName: 'User',
           role: 'operator',
+          idType: 'cedula',
+          idNumber: '99887766',
         },
         'admin-id',
       );
@@ -161,8 +166,8 @@ describe('UsersService', () => {
     });
 
     it('never returns password_hash in response DTO', async () => {
-      userRepository.findOne.mockResolvedValueOnce(null);
       roleRepository.findOne.mockResolvedValueOnce(mockRole as Role);
+      userRepository.findOne.mockResolvedValueOnce(null);
       userRepository.create.mockReturnValueOnce(mockUser as User);
       userRepository.save.mockResolvedValueOnce(mockUser as User);
       (bcrypt.hash as jest.Mock).mockResolvedValueOnce('hashed-pw');
@@ -174,6 +179,8 @@ describe('UsersService', () => {
           firstName: 'Test',
           lastName: 'User',
           role: 'operator',
+          idType: 'placa',
+          idNumber: '55443322',
         },
         'admin-id',
       );

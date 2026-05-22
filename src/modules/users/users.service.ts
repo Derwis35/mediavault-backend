@@ -44,23 +44,29 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto, adminUserId: string): Promise<UserResponseDto> {
-    const email = dto.email.toLowerCase();
-    const existing = await this.userRepository.findOne({ where: { email } });
-    if (existing) throw new ConflictException('El email ya está registrado');
+    const email = dto.email ? dto.email.toLowerCase() : null;
 
     const role = await this.roleRepository.findOne({
       where: { name: dto.role as RoleName },
     });
     if (!role) throw new NotFoundException(`Rol '${dto.role}' no encontrado`);
 
+    if (dto.idNumber) {
+      const existingId = await this.userRepository.findOne({ where: { idNumber: dto.idNumber } });
+      if (existingId) throw new ConflictException('El número de identificación ya está registrado');
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = this.userRepository.create({
-      email,
+      email: email ?? '',
       passwordHash,
       firstName: dto.firstName,
       lastName: dto.lastName,
       isActive: dto.isActive ?? true,
       role,
+      idType: (dto.idType as User['idType']) ?? null,
+      idNumber: dto.idNumber ?? null,
+      cargo: dto.cargo ?? null,
     });
     const saved = await this.userRepository.save(user);
 
@@ -163,6 +169,17 @@ export class UsersService {
     if (dto.firstName !== undefined) user.firstName = dto.firstName;
     if (dto.lastName !== undefined) user.lastName = dto.lastName;
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
+    if (dto.idType !== undefined) user.idType = (dto.idType as User['idType']) ?? null;
+    if (dto.idNumber !== undefined) {
+      if (dto.idNumber) {
+        const existingId = await this.userRepository.findOne({ where: { idNumber: dto.idNumber } });
+        if (existingId && existingId.id !== id) throw new ConflictException('El número de identificación ya está registrado');
+      }
+      user.idNumber = dto.idNumber ?? null;
+    }
+    if (dto.cargo !== undefined) user.cargo = dto.cargo ?? null;
+    if (dto.zoneId !== undefined) user.zoneId = dto.zoneId ?? null;
+    if (dto.quadrantId !== undefined) user.quadrantId = dto.quadrantId ?? null;
 
     const saved = await this.userRepository.save(user);
 
@@ -370,6 +387,11 @@ export class UsersService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      idType: user.idType ?? null,
+      idNumber: user.idNumber ?? null,
+      cargo: user.cargo ?? null,
+      zoneId: user.zoneId ?? null,
+      quadrantId: user.quadrantId ?? null,
       role: user.role
         ? { id: user.role.id, name: user.role.name, description: user.role.description }
         : undefined,
