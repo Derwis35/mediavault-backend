@@ -14,6 +14,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Event } from '../../events/entities/event.entity';
 import { Evidence } from '../../evidences/entities/evidence.entity';
+import { Device } from '../../devices/entities/device.entity';
 
 export enum StreamStatus {
   ACTIVE = 'active',
@@ -47,6 +48,22 @@ export class Stream {
 
   @Column({ name: 'wowza_stream_name' })
   wowzaStreamName!: string;
+
+  @Column({ name: 'source_type', type: 'varchar', default: 'wowza' })
+  sourceType!: string;
+
+  @Column({ name: 'stream_path', type: 'varchar', nullable: true })
+  streamPath?: string | null;
+
+  @Column({ name: 'input_protocol', type: 'varchar', nullable: true })
+  inputProtocol?: string | null;
+
+  @Column({ name: 'device_id', type: 'uuid', nullable: true, insert: false, update: false })
+  deviceId?: string | null;
+
+  @ManyToOne(() => Device, { nullable: true, onDelete: 'SET NULL', eager: false })
+  @JoinColumn({ name: 'device_id' })
+  device?: Device | null;
 
   @Column({ name: 'source_url', nullable: true })
   sourceUrl?: string;

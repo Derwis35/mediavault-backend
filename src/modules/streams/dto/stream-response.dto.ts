@@ -14,6 +14,10 @@ export class StreamResponseDto {
   metadata?: Record<string, unknown>;
   createdAt!: Date;
   updatedAt!: Date;
+  sourceType?: string;
+  streamPath?: string | null;
+  inputProtocol?: string | null;
+  deviceId?: string | null;
   isLiveInWowza!: boolean;
   ingestionStatus?: string;
   playbackUrls?: WowzaPlaybackUrls;

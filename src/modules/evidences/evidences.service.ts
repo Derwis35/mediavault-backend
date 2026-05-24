@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import * as path from 'path';
 import {
   BadRequestException,
   ForbiddenException,
@@ -27,6 +28,7 @@ import { AuditService } from '../audit/audit.service';
 import { StreamingGateway } from '../gateway/streaming.gateway';
 import { WowzaService } from '../wowza/wowza.service';
 import { CreateDvrClipDto } from './dto/create-dvr-clip.dto';
+import { EtiquetasService } from '../clasificaciones/etiquetas.service';
 
 const MAX_SNAPSHOT_BYTES = 10 * 1024 * 1024;
 
@@ -58,6 +60,7 @@ export class EvidencesService {
     private readonly auditService: AuditService,
     private readonly gateway: StreamingGateway,
     private readonly wowzaService: WowzaService,
+    private readonly etiquetasService: EtiquetasService,
   ) {}
 
   async create(
@@ -109,6 +112,21 @@ export class EvidencesService {
 
     const saved = await this.evidenceRepository.save(evidence);
 
+    // Auto-assign RUTINA etiqueta if it exists
+    const [rutina] = await this.evidenceRepository.query(
+      `SELECT id FROM etiquetas WHERE name = 'RUTINA' AND is_active = true LIMIT 1`,
+    ) as Array<{ id: string }>;
+
+    if (rutina) {
+      const now = new Date();
+      const expiresAt = new Date(now);
+      expiresAt.setDate(expiresAt.getDate() + 60);
+      await this.evidenceRepository.query(
+        `UPDATE evidences SET etiqueta_id = $1, etiqueta_assigned_at = $2, expires_at = $3 WHERE id = $4`,
+        [rutina.id, now, expiresAt, saved.id],
+      );
+    }
+
     await this.auditService.logAction(
       'EVIDENCE_CREATED',
       'Evidence',
@@ -121,7 +139,11 @@ export class EvidencesService {
     this.gateway.emitEvidenceCreated(saved as unknown as Record<string, unknown>);
 
     const downloadUrl = await this.storageService.generateDownloadToken(saved.id, userId);
-    return this.toResponseDto(saved, stream, downloadUrl);
+    const reloaded = await this.evidenceRepository.findOne({
+      where: { id: saved.id },
+      relations: ['stream', 'event', 'uploadedBy', 'etiqueta', 'etiqueta.clasificacion'],
+    });
+    return this.toResponseDto(reloaded ?? saved, undefined, downloadUrl);
   }
 
   async createSnapshot(dto: SnapshotCreateDto, userId: string): Promise<EvidenceResponseDto> {
@@ -245,7 +267,9 @@ export class EvidencesService {
       .createQueryBuilder('evidence')
       .leftJoinAndSelect('evidence.stream', 'stream')
       .leftJoinAndSelect('evidence.event', 'event')
-      .leftJoinAndSelect('evidence.uploadedBy', 'uploadedBy');
+      .leftJoinAndSelect('evidence.uploadedBy', 'uploadedBy')
+      .leftJoinAndSelect('evidence.etiqueta', 'etiqueta')
+      .leftJoinAndSelect('etiqueta.clasificacion', 'clasificacion');
 
     if (userRole === 'viewer') {
       qb.andWhere('uploadedBy.id = :viewerUserId', { viewerUserId: userId });
@@ -294,7 +318,7 @@ export class EvidencesService {
   async findOne(id: string, userId: string, userRole: string): Promise<EvidenceResponseDto> {
     const evidence = await this.evidenceRepository.findOne({
       where: { id },
-      relations: ['stream', 'event', 'uploadedBy'],
+      relations: ['stream', 'event', 'uploadedBy', 'etiqueta', 'etiqueta.clasificacion'],
     });
 
     if (!evidence) throw new NotFoundException(`Evidence ${id} no encontrada`);
@@ -387,12 +411,76 @@ export class EvidencesService {
     return { absolutePath, hashSha256: evidence.hashSha256, storagePath: evidence.storagePath, evidenceId };
   }
 
+  async prepareDirectDownload(
+    id: string,
+    userId: string,
+  ): Promise<{ absolutePath: string; filename: string }> {
+    const evidence = await this.evidenceRepository.findOne({ where: { id } });
+    if (!evidence) throw new NotFoundException(`Evidence ${id} no encontrada`);
+
+    const absolutePath = this.storageService.getAbsolutePath(evidence.storagePath);
+    const filename = path.basename(evidence.storagePath);
+
+    await this.auditService.logAction('EVIDENCE_DOWNLOADED', 'Evidence', id, userId);
+
+    return { absolutePath, filename };
+  }
+
   async remove(id: string, userId: string): Promise<void> {
     const evidence = await this.evidenceRepository.findOne({ where: { id } });
     if (!evidence) throw new NotFoundException(`Evidence ${id} no encontrada`);
 
     await this.evidenceRepository.softDelete(id);
     await this.auditService.logAction('EVIDENCE_DELETED', 'Evidence', id, userId);
+  }
+
+  async assignEtiqueta(
+    evidenceId: string,
+    etiquetaId: string | null,
+    userId: string,
+  ): Promise<EvidenceResponseDto> {
+    const evidence = await this.evidenceRepository.findOne({
+      where: { id: evidenceId },
+      relations: ['stream', 'uploadedBy', 'etiqueta', 'etiqueta.clasificacion'],
+    });
+    if (!evidence) throw new NotFoundException(`Evidence ${evidenceId} no encontrada`);
+
+    if (etiquetaId === null) {
+      evidence.etiqueta = null;
+      evidence.etiquetaAssignedAt = null;
+      evidence.expiresAt = null;
+    } else {
+      const etiqueta = await this.etiquetasService.findOne(etiquetaId);
+      evidence.etiqueta = etiqueta;
+      const now = new Date();
+      evidence.etiquetaAssignedAt = now;
+
+      if (etiqueta.clasificacion.retentionDays !== null) {
+        const expiresAt = new Date(now);
+        expiresAt.setDate(expiresAt.getDate() + etiqueta.clasificacion.retentionDays);
+        evidence.expiresAt = expiresAt;
+      } else {
+        evidence.expiresAt = null;
+      }
+    }
+
+    const saved = await this.evidenceRepository.save(evidence);
+
+    await this.auditService.logAction(
+      'ETIQUETA_CHANGED',
+      'Evidence',
+      evidenceId,
+      userId,
+      undefined,
+      { etiquetaId },
+    );
+
+    const reloaded = await this.evidenceRepository.findOne({
+      where: { id: evidenceId },
+      relations: ['stream', 'uploadedBy', 'etiqueta', 'etiqueta.clasificacion'],
+    });
+
+    return this.toResponseDto(reloaded ?? saved);
   }
 
   private toResponseDto(
@@ -419,6 +507,22 @@ export class EvidencesService {
       createdAt: evidence.createdAt?.toISOString() ?? new Date().toISOString(),
       integrityStatus: 'unknown',
       downloadUrl,
+      fileType: evidence.fileType ?? null,
+      etiquetaId: evidence.etiquetaId ?? null,
+      etiqueta: evidence.etiqueta
+        ? {
+            id: evidence.etiqueta.id,
+            name: evidence.etiqueta.name,
+            clasificacion: {
+              id: evidence.etiqueta.clasificacion.id,
+              name: evidence.etiqueta.clasificacion.name,
+              color: evidence.etiqueta.clasificacion.color,
+              retentionDays: evidence.etiqueta.clasificacion.retentionDays,
+            },
+          }
+        : null,
+      etiquetaAssignedAt: evidence.etiquetaAssignedAt?.toISOString() ?? null,
+      expiresAt: evidence.expiresAt?.toISOString() ?? null,
     };
   }
 }

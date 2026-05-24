@@ -22,7 +22,7 @@ export class WowzaSecureTokenService {
     streamId?: string,
   ): Promise<WowzaSecureToken> {
     const startTime = Math.floor(Date.now() / 1000);
-    const ttlSeconds = params.ttlSeconds ?? 1800;
+    const ttlSeconds = params.ttlSeconds ?? 3600;
     const endTime = startTime + ttlSeconds;
     const secret = this.configService.get<string>('wowza.secureTokenSecret') || '';
     const clientIp = params.clientIp ?? '';

@@ -23,6 +23,9 @@ import { WowzaServersModule } from './wowza-servers/wowza-servers.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { OrgModule } from './modules/org/org.module';
+import { ClasificacionesModule } from './modules/clasificaciones/clasificaciones.module';
+import { RetentionModule } from './modules/retention/retention.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -71,6 +74,9 @@ import { AuditService } from './modules/audit/audit.service';
     DevicesModule,
     AlertsModule,
     OrgModule,
+    ClasificacionesModule,
+    RetentionModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

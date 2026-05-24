@@ -1,4 +1,15 @@
-import { EvidenceType } from '../entities/evidence.entity';
+import { EvidenceFileType, EvidenceType } from '../entities/evidence.entity';
+
+export interface EtiquetaInEvidence {
+  id: string;
+  name: string;
+  clasificacion: {
+    id: string;
+    name: string;
+    color: string;
+    retentionDays: number | null;
+  };
+}
 
 export interface EvidenceResponseDto {
   id: string;
@@ -16,6 +27,11 @@ export interface EvidenceResponseDto {
   createdAt: string;
   integrityStatus: 'pending' | 'verified' | 'failed' | 'unknown';
   downloadUrl?: string;
+  etiquetaId?: string | null;
+  etiqueta?: EtiquetaInEvidence | null;
+  etiquetaAssignedAt?: string | null;
+  expiresAt?: string | null;
+  fileType?: EvidenceFileType | null;
 }
 
 export interface IntegrityVerificationResult {

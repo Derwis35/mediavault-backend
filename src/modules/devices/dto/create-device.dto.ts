@@ -17,11 +17,6 @@ export class CreateDeviceDto {
   @MaxLength(100)
   type?: string;
 
-  @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  wowzaStreamName!: string;
-
   @IsUUID()
   @IsOptional()
   assignedUserId?: string;

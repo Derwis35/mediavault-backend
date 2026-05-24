@@ -12,6 +12,7 @@ import { User } from '../users/entities/user.entity';
 import { AuditModule } from '../audit/audit.module';
 import { GatewayModule } from '../gateway/gateway.module';
 import { WowzaModule } from '../wowza/wowza.module';
+import { ClasificacionesModule } from '../clasificaciones/clasificaciones.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { WowzaModule } from '../wowza/wowza.module';
     AuditModule,
     GatewayModule,
     WowzaModule,
+    ClasificacionesModule,
   ],
   controllers: [EvidencesController],
   providers: [

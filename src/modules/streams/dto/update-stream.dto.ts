@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
@@ -69,4 +70,20 @@ export class UpdateStreamDto {
   @IsArray()
   @IsString({ each: true })
   ffmpegExtraArgs?: string[];
+
+  @IsOptional()
+  @IsString()
+  sourceType?: string;
+
+  @IsOptional()
+  @IsString()
+  streamPath?: string;
+
+  @IsOptional()
+  @IsString()
+  inputProtocol?: string;
+
+  @IsOptional()
+  @IsUUID()
+  deviceId?: string;
 }

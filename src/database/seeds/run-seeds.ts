@@ -67,6 +67,48 @@ const runSeeds = async () => {
 
   await seedAdmin(dataSource);
 
+  // Seed clasificaciones del sistema
+  const clasificacionDefs = [
+    { name: 'Retención Indefinida', retentionDays: null, color: '#6b7280' },
+    { name: 'RUTINA',         retentionDays: 60,   color: '#f59e0b' },
+  ];
+
+  for (const def of clasificacionDefs) {
+    const existing = await dataSource.query(
+      `SELECT id FROM clasificaciones WHERE name = $1`,
+      [def.name],
+    ) as Array<{ id: string }>;
+
+    if (existing.length === 0) {
+      await dataSource.query(
+        `INSERT INTO clasificaciones (name, retention_days, color, is_system, is_active)
+         VALUES ($1, $2, $3, true, true)`,
+        [def.name, def.retentionDays, def.color],
+      );
+    }
+  }
+
+  // Etiqueta RUTINA bajo clasificación RUTINA
+  const [rutinaClasif] = await dataSource.query(
+    `SELECT id FROM clasificaciones WHERE name = 'RUTINA'`,
+  ) as Array<{ id: string }>;
+
+  if (rutinaClasif) {
+    const etiquetaExistente = await dataSource.query(
+      `SELECT id FROM etiquetas WHERE name = 'RUTINA' AND clasificacion_id = $1`,
+      [rutinaClasif.id],
+    ) as Array<{ id: string }>;
+
+    if (etiquetaExistente.length === 0) {
+      await dataSource.query(
+        `INSERT INTO etiquetas (name, description, clasificacion_id, is_system, is_active)
+         VALUES ('RUTINA', 'Video de actividad rutinaria', $1, true, true)`,
+        [rutinaClasif.id],
+      );
+    }
+  }
+  console.log('Clasificaciones y etiquetas seeded');
+
   await dataSource.destroy();
   console.log('All seeds completed successfully');
 };

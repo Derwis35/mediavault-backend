@@ -19,12 +19,6 @@ export class UpdateDeviceDto {
   @MaxLength(100)
   type?: string;
 
-  @IsString()
-  @IsOptional()
-  @MinLength(1)
-  @MaxLength(200)
-  wowzaStreamName?: string;
-
   @IsEnum(DeviceStatus)
   @IsOptional()
   status?: DeviceStatus;

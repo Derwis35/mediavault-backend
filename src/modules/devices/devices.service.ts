@@ -47,7 +47,6 @@ export class DevicesService {
       name: dto.name,
       serial: dto.serial,
       type: dto.type,
-      wowzaStreamName: dto.wowzaStreamName,
       assignedUser,
       status: dto.status ?? DeviceStatus.REGISTERED,
       latitude: dto.latitude ?? null,
@@ -63,7 +62,7 @@ export class DevicesService {
       entityType: 'Device',
       entityId: saved.id,
       userId: actorId,
-      metadata: { serial: saved.serial, wowzaStreamName: saved.wowzaStreamName },
+      metadata: { serial: saved.serial },
     });
 
     this.logger.log(`[DEVICES] Creado: ${saved.serial} (${saved.id})`);
@@ -92,7 +91,7 @@ export class DevicesService {
     }
     if (filters.search) {
       qb.andWhere(
-        '(LOWER(d.name) ILIKE :search OR LOWER(d.serial) ILIKE :search OR LOWER(d.wowzaStreamName) ILIKE :search)',
+        '(LOWER(d.name) ILIKE :search OR LOWER(d.serial) ILIKE :search)',
         { search: `%${filters.search.toLowerCase()}%` },
       );
     }
@@ -138,7 +137,6 @@ export class DevicesService {
 
     if (dto.name !== undefined) device.name = dto.name;
     if (dto.type !== undefined) device.type = dto.type;
-    if (dto.wowzaStreamName !== undefined) device.wowzaStreamName = dto.wowzaStreamName;
     if (dto.status !== undefined) device.status = dto.status;
     if (dto.isActive !== undefined) device.isActive = dto.isActive;
     if (dto.latitude !== undefined) device.latitude = dto.latitude;

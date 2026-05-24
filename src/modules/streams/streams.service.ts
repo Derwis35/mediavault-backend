@@ -65,6 +65,10 @@ export class StreamsService {
       location: dto.location,
       metadata: dto.metadata,
       status: StreamStatus.INACTIVE,
+      sourceType: dto.sourceType ?? 'wowza',
+      streamPath: dto.streamPath ?? null,
+      inputProtocol: dto.inputProtocol ?? null,
+      device: dto.deviceId ? ({ id: dto.deviceId } as unknown as Stream['device']) : null,
       createdBy: { id: userId } as unknown as Stream['createdBy'],
     });
 
@@ -87,6 +91,7 @@ export class StreamsService {
       location?: string;
       search?: string;
       wowzaAppName?: string;
+      deviceId?: string;
     },
     pagination: { page?: number; limit?: number },
   ): Promise<PaginatedResponse<StreamResponseDto>> {
@@ -117,6 +122,9 @@ export class StreamsService {
     if (filters.wowzaAppName) {
       qb.andWhere('stream.wowzaAppName = :wowzaAppName', { wowzaAppName: filters.wowzaAppName });
     }
+    if (filters.deviceId) {
+      qb.andWhere('stream.deviceId = :deviceId', { deviceId: filters.deviceId });
+    }
 
     const [streams, total] = await qb.getManyAndCount();
 
@@ -136,7 +144,7 @@ export class StreamsService {
   async findOne(id: string): Promise<StreamResponseDto> {
     const stream = await this.streamRepository.findOne({
       where: { id },
-      relations: ['createdBy'],
+      relations: ['createdBy', 'device'],
     });
     if (!stream) {
       throw new NotFoundException(`Stream ${id} no encontrado`);
@@ -296,7 +304,7 @@ export class StreamsService {
         streamName: stream.wowzaStreamName,
         appName: stream.wowzaAppName,
         clientIp,
-        ttlSeconds: 1800,
+        ttlSeconds: 3600,
       },
       sessionId,
       id,
@@ -403,6 +411,10 @@ export class StreamsService {
     dto.metadata = stream.metadata;
     dto.createdAt = stream.createdAt;
     dto.updatedAt = stream.updatedAt;
+    dto.sourceType = stream.sourceType;
+    dto.streamPath = stream.streamPath ?? null;
+    dto.inputProtocol = stream.inputProtocol ?? null;
+    dto.deviceId = stream.deviceId ?? null;
     dto.isLiveInWowza = false;
     return dto;
   }

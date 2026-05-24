@@ -43,9 +43,10 @@ export class StreamsController {
     @Query('location') location?: string,
     @Query('search') search?: string,
     @Query('wowzaAppName') wowzaAppName?: string,
+    @Query('deviceId') deviceId?: string,
   ) {
     return this.streamsService.findAll(
-      { status, protocol, location, search, wowzaAppName },
+      { status, protocol, location, search, wowzaAppName, deviceId },
       {
         page: page !== undefined ? Number(page) : undefined,
         limit: limit !== undefined ? Number(limit) : undefined,

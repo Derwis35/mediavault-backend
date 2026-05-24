@@ -110,7 +110,6 @@ export class DevicesController {
     const device = await this.devicesService.findOne(id);
     return {
       isLive: device.status === DeviceStatus.ACTIVE,
-      wowzaStreamName: device.wowzaStreamName,
       lastSeen: device.lastSeen ?? null,
     };
   }

@@ -29,9 +29,6 @@ export class Device {
   @Column({ nullable: true, length: 100 })
   type?: string;
 
-  @Column({ name: 'wowza_stream_name', length: 200 })
-  wowzaStreamName!: string;
-
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   assignedUser?: User | null;

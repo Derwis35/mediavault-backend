@@ -12,6 +12,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -25,6 +26,7 @@ import { CreateEvidenceDto } from './dto/create-evidence.dto';
 import { CreateDvrClipDto } from './dto/create-dvr-clip.dto';
 import { EvidenceFiltersDto } from './dto/evidence-filters.dto';
 import { SnapshotCreateDto } from './dto/evidence-response.dto';
+import { AssignEtiquetaDto } from './dto/assign-etiqueta.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
@@ -156,6 +158,44 @@ export class EvidencesController {
     });
 
     res.send(buffer);
+  }
+
+  @Get(':id/download')
+  @Roles('admin', 'supervisor', 'operator', 'viewer')
+  async downloadById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { absolutePath, filename } = await this.evidencesService.prepareDirectDownload(
+      id,
+      user.userId,
+    );
+
+    if (!fs.existsSync(absolutePath)) {
+      res.status(404).json({ message: 'Archivo no disponible en disco' });
+      return;
+    }
+
+    const ext = path.extname(filename);
+    const mimeType = mime.lookup(ext) || 'application/octet-stream';
+
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    fs.createReadStream(absolutePath).pipe(res);
+  }
+
+  @Put(':id/etiqueta')
+  @Roles('admin', 'supervisor')
+  assignEtiqueta(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AssignEtiquetaDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.evidencesService.assignEtiqueta(id, dto.etiquetaId, user.userId);
   }
 
   @Delete(':id')
