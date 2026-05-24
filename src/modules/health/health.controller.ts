@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import {
   DiskHealthIndicator,
   HealthCheck,
@@ -12,6 +13,7 @@ import { WowzaService } from '../wowza/wowza.service';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(

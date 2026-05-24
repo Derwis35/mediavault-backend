@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { forwardRef, Inject, Logger, OnApplicationShutdown, UseGuards } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import {
@@ -41,6 +42,7 @@ interface ConnectedClient {
   subscribedStreams: Set<string>;
 }
 
+@SkipThrottle()
 @WebSocketGateway({
   namespace: '/monitoring',
   cors: { origin: process.env.FRONTEND_URL, credentials: true },

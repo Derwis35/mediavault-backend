@@ -31,6 +31,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Audit } from '../../common/decorators/audit.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 interface AuthUser {
   userId: string;
@@ -45,6 +46,7 @@ export class EvidencesController {
 
   @Get('download/:token')
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   async downloadEvidence(
     @Param('token') token: string,
     @Req() req: Request,
